@@ -1,0 +1,30 @@
+# Ignore virtual environment directory
+venv/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore environment and configuration files
+*.env
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore package manager files
+pip-log.txt
+
+# Ignore IDE-specific files
+.idea/
+.vscode/
+
+# Ignore the compiled bytecode from Python
+*.pyo
+
+# Ignore requirements if dynamically generated (optional, uncomment if applicable)
+# requirements.txt
