@@ -63,6 +63,33 @@ for row in range(grid_size):
             "bottom_right": (bottom_right_x, bottom_right_y)
         })
 
+def get_color_label(avg_color):
+    r, g, b = avg_color
+
+    # Check for white first (all high RGB values)
+    if r > 200 and g > 200 and b > 200:
+        return "w" # White
+
+    # Check for yellow (high red and green, low blue)
+    elif r > 200 and g > 200 and b < 100:
+        return "y" # Yellow
+
+    # Check for orange (high red, moderate green, low blue)
+    elif r > 200 and g > 100 and b < 100:
+        return "o" # Orange
+
+    # General red, green, and blue conditions
+    elif r > g and r > b:
+        return "r" # Red
+    elif g > r and g > b:
+        return "g" # Green
+    elif b > r and b > g:
+        return "b" # Blue
+
+    # If no match, return NaN
+    else:
+        return "NaN"
+
 # Video writer setup (optional: for saving the recording)
 fps = 30
 fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
@@ -87,17 +114,65 @@ with mss.mss() as sct:
             cell_width = width // grid_size
             cell_height = height // grid_size
 
-            for square in grid_squares:
-                top_left = square["top_left"]
-                bottom_right = square["bottom_right"]
-                cv2.rectangle(
-                    img,
-                    (top_left[0] - monitor_grid["left"], top_left[1] - monitor_grid["top"]),
-                    (bottom_right[0] - monitor_grid["left"], bottom_right[1] - monitor_grid["top"]),
-                    (0, 255, 0),  # Green color for the grid
-                    2
-                )
+            color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
             
+            for square in grid_squares:
+                row = square["row"]
+                col = square["col"]
+                top_left = (
+                    square["top_left"][0] - monitor_grid["left"],
+                    square["top_left"][1] - monitor_grid["top"]
+                )
+                bottom_right = (
+                    square["bottom_right"][0] - monitor_grid["left"],
+                    square["bottom_right"][1] - monitor_grid["top"]
+                )
+                # Crop the square region
+                square_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+
+                # Calculate the average color
+                avg_color = np.mean(square_img, axis=(0, 1))  # BGR format
+                avg_color_rgb = avg_color[::-1]  # Convert to RGB for labeling
+
+                # Get the color label
+                color_label = get_color_label(avg_color_rgb)
+                color_labels[row][col] = color_label
+
+            # Draw the grid and labels on the image
+            for square in grid_squares:
+                top_left = (
+                    square["top_left"][0] - monitor_grid["left"],
+                    square["top_left"][1] - monitor_grid["top"]
+                )
+                bottom_right = (
+                    square["bottom_right"][0] - monitor_grid["left"],
+                    square["bottom_right"][1] - monitor_grid["top"]
+                )
+                # Draw rectangle
+                cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 2)
+
+                 # Get the center of the square
+                center_x = (top_left[0] + bottom_right[0]) // 2
+                center_y = (top_left[1] + bottom_right[1]) // 2
+
+                # Get the color label
+                row = square["row"]
+                col = square["col"]
+                label = color_labels[row][col]
+
+                  # Crop the square region to compute the average background color
+                square_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
+                avg_color = np.mean(square_img, axis=(0, 1))  # BGR format
+                avg_color_rgb = avg_color[::-1]  # Convert to RGB for dynamic text color
+
+                inverted_color = (255 - int(avg_color[0]), 255 - int(avg_color[1]), 255 - int(avg_color[2]))
+
+                # Render the label in the center of the square
+                cv2.putText(
+                    img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
+                )
+
             # Write the frame to the video file
             out.write(img)
             
