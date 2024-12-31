@@ -103,7 +103,7 @@ def identify_gem_type(square_img, reference_images):
     return identified_gem
 
 # Video writer setup (optional: for saving the recording)
-fps = 24
+fps = 7
 fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
 out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"], monitor_grid["height"]))
 
