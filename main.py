@@ -39,8 +39,29 @@ monitor_grid = {
     "top": tw_top + 175,
     "left": tw_left + 533,
     "width": 1026,
-    "height": 1025
+    "height": 1026
 }
+
+print("Monitor Grid:", monitor_grid)
+
+grid_size = 8
+cell_width = monitor_grid["width"] // grid_size
+cell_height = monitor_grid["height"] // grid_size
+
+grid_squares = []
+for row in range(grid_size):
+    for col in range(grid_size):
+        top_left_x = monitor_grid["left"] + col * cell_width
+        top_left_y = monitor_grid["top"] + row * cell_height
+        bottom_right_x = top_left_x + cell_width
+        bottom_right_y = top_left_y + cell_height
+
+        grid_squares.append({
+            "row": row,
+            "col": col,
+            "top_left": (top_left_x, top_left_y),
+            "bottom_right": (bottom_right_x, bottom_right_y)
+        })
 
 # Video writer setup (optional: for saving the recording)
 fps = 30
@@ -66,11 +87,16 @@ with mss.mss() as sct:
             cell_width = width // grid_size
             cell_height = height // grid_size
 
-            for i in range(1, grid_size):
-                # Draw vertical lines
-                cv2.line(img, (i * cell_width, 0), (i * cell_width, height), grid_color, grid_thickness)
-                # Draw horizontal lines
-                cv2.line(img, (0, i * cell_height), (width, i * cell_height), grid_color, grid_thickness)
+            for square in grid_squares:
+                top_left = square["top_left"]
+                bottom_right = square["bottom_right"]
+                cv2.rectangle(
+                    img,
+                    (top_left[0] - monitor_grid["left"], top_left[1] - monitor_grid["top"]),
+                    (bottom_right[0] - monitor_grid["left"], bottom_right[1] - monitor_grid["top"]),
+                    (0, 255, 0),  # Green color for the grid
+                    2
+                )
             
             # Write the frame to the video file
             out.write(img)
