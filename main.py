@@ -64,35 +64,7 @@ for row in range(grid_size):
         })
 
 def get_color_label(avg_color):
-    r, g, b = avg_color
-
-    # White: All channels high
-    if r > 150 and g > 150 and b > 150:
-        return "w"
-
-    # Yellow: High red and green, low blue
-    elif r > 150 and g > 140 and b < 100:
-        return "y"
-
-    # Orange: High red, moderate green, low blue
-    elif r > 150 and g > 90 and b < 80:
-        return "o"
-
-    # Red: Dominant red
-    elif r > g and r > b:
-        return "r"
-
-    # Green: Dominant green
-    elif g > r and g > b:
-        return "g"
-
-    # Blue: Dominant blue
-    elif b > r and b > g:
-        return "b"
-
-    # Default
-    else:
-        return "NaN"
+    return 'U'
 
 # Video writer setup (optional: for saving the recording)
 fps = 30
