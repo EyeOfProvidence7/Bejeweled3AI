@@ -186,7 +186,7 @@ with mss.mss() as sct:
 
                 #Render the label in the center of the square
                 cv2.putText(
-                    img, label, (center_x + 10, center_y + 10),  # Slight offset to center the text
+                    img, label, (center_x - 20, center_y + 20),  # Slight offset to center the text
                     cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 4, cv2.LINE_AA
                 )
 
