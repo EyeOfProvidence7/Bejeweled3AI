@@ -111,9 +111,10 @@ out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"],
 with mss.mss() as sct:
     try:
         print("Recording started. Use Ctrl+C to stop.")
-        start_time = time.time()
+        prev_time = time.time()
         while True:
             # Capture the game window
+            start_time = time.time()
             screenshot = sct.grab(monitor_grid)
             img = np.array(screenshot)
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert to BGR for OpenCV
@@ -192,11 +193,16 @@ with mss.mss() as sct:
 
             # Write the frame to the video file
             out.write(img)
-            
-            # Ensure 30 FPS (sleep if needed to maintain consistent frame rate)
-            elapsed_time = time.time() - start_time
+
+            # Calculate elapsed time for this frame and FPS
+            frame_time = time.time() - start_time
+            fps_live = 1 / frame_time if frame_time > 0 else 0
+            print(f"Live FPS: {fps_live:.2f}")
+
+            # Ensure consistent frame rate (sleep if needed)
+            elapsed_time = time.time() - prev_time
             time.sleep(max(1 / fps - elapsed_time, 0))
-            start_time = time.time()
+            prev_time = time.time()
     except KeyboardInterrupt:
         print("Recording stopped by user.")
     finally:
