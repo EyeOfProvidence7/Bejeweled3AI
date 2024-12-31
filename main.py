@@ -119,7 +119,7 @@ with mss.mss() as sct:
                 )
 
                 # Draw rectangle using cropped coordinates
-                cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 2)
+                cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
 
                 # Crop the square region using cropped coordinates
                 square_img = img[cropped_top_left[1]:cropped_bottom_right[1], cropped_top_left[0]:cropped_bottom_right[0]]
