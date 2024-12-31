@@ -71,16 +71,7 @@ fps = 30
 fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
 out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"], monitor_grid["height"]))
 
-def render_labels(row, col, img, center_x, center_y, label, center_crop):
-
-                # Render the label in the center of the square
-    cv2.putText(
-                    img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
-                    cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 4, cv2.LINE_AA
-                )
-
-    print(f"Row {row}, Col {col}: Avg Color (RGB) = {avg_color_rgb}, Label = {label}")
-
+# Capture loop
 with mss.mss() as sct:
     try:
         print("Recording started. Use Ctrl+C to stop.")
@@ -151,7 +142,20 @@ with mss.mss() as sct:
                 height, width, _ = square_img.shape
                 center_crop = square_img[height//4:3*height//4, width//4:3*width//4]
 
-                render_labels(row, col, img, center_x, center_y, label, center_crop)
+                    # Calculate the average color for the central region
+                avg_color = np.mean(center_crop, axis=(0, 1))  # Average over the cropped region
+
+                avg_color_rgb = avg_color[::-1]  # Convert to RGB for dynamic text color
+
+                inverted_color = (255 - int(avg_color[0]), 255 - int(avg_color[1]), 255 - int(avg_color[2]))
+
+                # Render the label in the center of the square
+                cv2.putText(
+                    img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
+                )
+
+                print(f"Row {row}, Col {col}: Avg Color (RGB) = {avg_color_rgb}, Label = {label}")
 
             # Write the frame to the video file
             out.write(img)
