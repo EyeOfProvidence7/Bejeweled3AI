@@ -35,10 +35,17 @@ monitor = {
     "height": tw_height
 }
 
+monitor_grid = {
+    "top": tw_top + 175,
+    "left": tw_left + 533,
+    "width": 1026,
+    "height": 1025
+}
+
 # Video writer setup (optional: for saving the recording)
 fps = 30
 fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
-out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (tw_width, tw_height))
+out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"], monitor_grid["height"]))
 
 # Capture loop
 with mss.mss() as sct:
@@ -47,7 +54,7 @@ with mss.mss() as sct:
         start_time = time.time()
         while True:
             # Capture the game window
-            screenshot = sct.grab(monitor)
+            screenshot = sct.grab(monitor_grid)
             img = np.array(screenshot)
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert to BGR for OpenCV
             
