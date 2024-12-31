@@ -103,10 +103,28 @@ with mss.mss() as sct:
                     square["bottom_right"][0] - monitor_grid["left"],
                     square["bottom_right"][1] - monitor_grid["top"]
                 )
-                # Crop the square region
-                square_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 
-                # Calculate the average color
+                # Calculate dimensions
+                height = bottom_right[1] - top_left[1]
+                width = bottom_right[0] - top_left[0]
+
+                # Adjust coordinates for the cropped region
+                cropped_top_left = (
+                    top_left[0] + width // 4,
+                    top_left[1] + height // 4
+                )
+                cropped_bottom_right = (
+                    bottom_right[0] - width // 4,
+                    bottom_right[1] - height // 4
+                )
+
+                # Draw rectangle using cropped coordinates
+                cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 2)
+
+                # Crop the square region using cropped coordinates
+                square_img = img[cropped_top_left[1]:cropped_bottom_right[1], cropped_top_left[0]:cropped_bottom_right[0]]
+
+                # Calculate the average color of the cropped region
                 avg_color = np.mean(square_img, axis=(0, 1))  # BGR format
                 avg_color_rgb = avg_color[::-1]  # Convert to RGB for labeling
 
@@ -114,7 +132,7 @@ with mss.mss() as sct:
                 color_label = get_color_label(avg_color_rgb)
                 color_labels[row][col] = color_label
 
-            # Draw the grid and labels on the image
+            # Draw the labels on the image
             for square in grid_squares:
                 top_left = (
                     square["top_left"][0] - monitor_grid["left"],
@@ -124,8 +142,6 @@ with mss.mss() as sct:
                     square["bottom_right"][0] - monitor_grid["left"],
                     square["bottom_right"][1] - monitor_grid["top"]
                 )
-                # Draw rectangle
-                cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 2)
 
                  # Get the center of the square
                 center_x = (top_left[0] + bottom_right[0]) // 2
@@ -150,10 +166,10 @@ with mss.mss() as sct:
                 inverted_color = (255 - int(avg_color[0]), 255 - int(avg_color[1]), 255 - int(avg_color[2]))
 
                 # Render the label in the center of the square
-                cv2.putText(
-                    img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
-                    cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
-                )
+                # cv2.putText(
+                #     img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
+                #     cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
+                # )
 
                 print(f"Row {row}, Col {col}: Avg Color (RGB) = {avg_color_rgb}, Label = {label}")
 
