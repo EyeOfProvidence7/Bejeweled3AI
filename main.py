@@ -4,6 +4,12 @@ import mss
 import numpy as np
 import cv2
 import time
+import glob
+
+reference_gems = {}
+for filepath in glob.glob("gems/*.png"):
+    gem_name = filepath.split("\\")[-1].split(".")[0]  # Extract gem name from filename
+    reference_gems[gem_name] = cv2.imread(filepath, cv2.IMREAD_COLOR)
 
 # Set up scaling factor for high-DPI displays
 scaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
@@ -63,11 +69,41 @@ for row in range(grid_size):
             "bottom_right": (bottom_right_x, bottom_right_y)
         })
 
-def get_color_label(avg_color):
-    return 'U'
+def compare_images_hist(img1, img2):
+    # Resize both images to the same size
+    img1 = cv2.resize(img1, (61, 61))
+    img2 = cv2.resize(img2, (61, 61))
+
+    # Convert to HSV color space
+    img1_hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
+    img2_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
+
+    # Compute histograms
+    hist1 = cv2.calcHist([img1_hsv], [0, 1, 2], None, [50, 50, 50], [0, 180, 0, 256, 0, 256])
+    hist2 = cv2.calcHist([img2_hsv], [0, 1, 2], None, [50, 50, 50], [0, 180, 0, 256, 0, 256])
+
+    # Normalize histograms
+    hist1 = cv2.normalize(hist1, hist1).flatten()
+    hist2 = cv2.normalize(hist2, hist2).flatten()
+
+    # Compute similarity (correlation)
+    similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+    return similarity
+
+def identify_gem_type(square_img, reference_images):
+    max_similarity = -1
+    identified_gem = "U"
+
+    for gem_name, ref_img in reference_images.items():
+        similarity = compare_images_hist(square_img, ref_img)
+        if similarity > max_similarity:
+            max_similarity = similarity
+            identified_gem = gem_name
+
+    return identified_gem
 
 # Video writer setup (optional: for saving the recording)
-fps = 30
+fps = 24
 fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
 out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"], monitor_grid["height"]))
 
@@ -118,19 +154,15 @@ with mss.mss() as sct:
                     bottom_right[1] - height // 4
                 )
 
-                # Draw rectangle using cropped coordinates
-                cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
-
                 # Crop the square region using cropped coordinates
                 square_img = img[cropped_top_left[1]:cropped_bottom_right[1], cropped_top_left[0]:cropped_bottom_right[0]]
 
-                # Calculate the average color of the cropped region
-                avg_color = np.mean(square_img, axis=(0, 1))  # BGR format
-                avg_color_rgb = avg_color[::-1]  # Convert to RGB for labeling
+                gem_type = identify_gem_type(square_img, reference_gems)
 
-                # Get the color label
-                color_label = get_color_label(avg_color_rgb)
-                color_labels[row][col] = color_label
+                # Draw rectangle using cropped coordinates
+                # cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
+
+                color_labels[row][col] = gem_type
 
             # Draw the labels on the image
             for square in grid_squares:
@@ -152,26 +184,11 @@ with mss.mss() as sct:
                 col = square["col"]
                 label = color_labels[row][col]
 
-                  # Crop the square region to compute the average background color
-                square_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-                
-                height, width, _ = square_img.shape
-                center_crop = square_img[height//4:3*height//4, width//4:3*width//4]
-
-                    # Calculate the average color for the central region
-                avg_color = np.mean(center_crop, axis=(0, 1))  # Average over the cropped region
-
-                avg_color_rgb = avg_color[::-1]  # Convert to RGB for dynamic text color
-
-                inverted_color = (255 - int(avg_color[0]), 255 - int(avg_color[1]), 255 - int(avg_color[2]))
-
-                # Render the label in the center of the square
-                # cv2.putText(
-                #     img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
-                #     cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
-                # )
-
-                print(f"Row {row}, Col {col}: Avg Color (RGB) = {avg_color_rgb}, Label = {label}")
+                #Render the label in the center of the square
+                cv2.putText(
+                    img, label, (center_x + 10, center_y + 10),  # Slight offset to center the text
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 4, cv2.LINE_AA
+                )
 
             # Write the frame to the video file
             out.write(img)
