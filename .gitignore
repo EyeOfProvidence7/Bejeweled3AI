@@ -28,3 +28,5 @@ pip-log.txt
 
 # Ignore requirements if dynamically generated (optional, uncomment if applicable)
 # requirements.txt
+
+game_recording.avi
