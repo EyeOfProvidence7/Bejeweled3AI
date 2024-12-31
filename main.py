@@ -57,6 +57,20 @@ with mss.mss() as sct:
             screenshot = sct.grab(monitor_grid)
             img = np.array(screenshot)
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert to BGR for OpenCV
+
+            height, width, _ = img.shape
+            grid_color = (0, 0, 255)  # Red color for the grid
+            grid_thickness = 2
+            grid_size = 8
+
+            cell_width = width // grid_size
+            cell_height = height // grid_size
+
+            for i in range(1, grid_size):
+                # Draw vertical lines
+                cv2.line(img, (i * cell_width, 0), (i * cell_width, height), grid_color, grid_thickness)
+                # Draw horizontal lines
+                cv2.line(img, (0, i * cell_height), (width, i * cell_height), grid_color, grid_thickness)
             
             # Write the frame to the video file
             out.write(img)
