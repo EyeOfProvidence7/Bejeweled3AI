@@ -66,27 +66,31 @@ for row in range(grid_size):
 def get_color_label(avg_color):
     r, g, b = avg_color
 
-    # Check for white first (all high RGB values)
-    if r > 200 and g > 200 and b > 200:
-        return "w" # White
+    # White: All channels high
+    if r > 150 and g > 150 and b > 150:
+        return "w"
 
-    # Check for yellow (high red and green, low blue)
-    elif r > 200 and g > 200 and b < 100:
-        return "y" # Yellow
+    # Yellow: High red and green, low blue
+    elif r > 150 and g > 140 and b < 100:
+        return "y"
 
-    # Check for orange (high red, moderate green, low blue)
-    elif r > 200 and g > 100 and b < 100:
-        return "o" # Orange
+    # Orange: High red, moderate green, low blue
+    elif r > 150 and g > 90 and b < 80:
+        return "o"
 
-    # General red, green, and blue conditions
+    # Red: Dominant red
     elif r > g and r > b:
-        return "r" # Red
-    elif g > r and g > b:
-        return "g" # Green
-    elif b > r and b > g:
-        return "b" # Blue
+        return "r"
 
-    # If no match, return NaN
+    # Green: Dominant green
+    elif g > r and g > b:
+        return "g"
+
+    # Blue: Dominant blue
+    elif b > r and b > g:
+        return "b"
+
+    # Default
     else:
         return "NaN"
 
@@ -162,7 +166,13 @@ with mss.mss() as sct:
 
                   # Crop the square region to compute the average background color
                 square_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
-                avg_color = np.mean(square_img, axis=(0, 1))  # BGR format
+                
+                height, width, _ = square_img.shape
+                center_crop = square_img[height//4:3*height//4, width//4:3*width//4]
+
+                    # Calculate the average color for the central region
+                avg_color = np.mean(center_crop, axis=(0, 1))  # Average over the cropped region
+
                 avg_color_rgb = avg_color[::-1]  # Convert to RGB for dynamic text color
 
                 inverted_color = (255 - int(avg_color[0]), 255 - int(avg_color[1]), 255 - int(avg_color[2]))
@@ -172,6 +182,8 @@ with mss.mss() as sct:
                     img, label, (center_x - 10, center_y + 10),  # Slight offset to center the text
                     cv2.FONT_HERSHEY_SIMPLEX, 2, inverted_color, 4, cv2.LINE_AA
                 )
+
+                print(f"Row {row}, Col {col}: Avg Color (RGB) = {avg_color_rgb}, Label = {label}")
 
             # Write the frame to the video file
             out.write(img)
