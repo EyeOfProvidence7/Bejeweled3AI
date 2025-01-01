@@ -1,75 +1,97 @@
-import pygetwindow as gw
-import ctypes
-import mss
-import numpy as np
-import cv2
-import time
 import glob
+import time
+import ctypes
 
-reference_gems = {}
-for filepath in glob.glob("gems/*.png"):
-    gem_name = filepath.split("\\")[-1].split(".")[0]  # Extract gem name from filename
-    reference_gems[gem_name] = cv2.imread(filepath, cv2.IMREAD_COLOR)
+import cv2
+import numpy as np
+import mss
+import pygetwindow as gw
 
-# Set up scaling factor for high-DPI displays
-scaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
+def load_reference_images(gems_dir: str) -> dict:
+    """
+    Loads all reference gem images from the given directory and returns
+    a dictionary mapping gem names to their corresponding images.
+    """
+    reference_gems = {}
+    for filepath in glob.glob(f"{gems_dir}/*.png"):
+        # Extract gem name from the filename (e.g., "red.png" -> "red")
+        gem_name = filepath.split("\\")[-1].split(".")[0]
+        reference_gems[gem_name] = cv2.imread(filepath, cv2.IMREAD_COLOR)
+    return reference_gems
 
-# Find the Bejeweled 3 game window
-window_titles = gw.getAllTitles()
-target_window = None
-for title in window_titles:
-    if "Bejeweled 3" in title:  
-        target_window = gw.getWindowsWithTitle(title)[0]
-        break
+def get_scale_factor() -> float:
+    """
+    Returns the Windows scale factor for high-DPI devices.
+    """
+    return ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
 
-if target_window:
-    tw_left = int(target_window.left * scaleFactor)
-    tw_top = int(target_window.top * scaleFactor)
-    tw_width = int(target_window.width * scaleFactor)
-    tw_height = int(target_window.height * scaleFactor)
-    print(f"Window Found: {target_window.title}")
-    print(f"Top-left: ({tw_left}, {tw_top})")
-    print(f"Size: {tw_width}x{tw_height}")
-else:
-    print("Game window not found. Make sure the game is running and visible.")
-    exit()
+def find_bejeweled_window() -> gw.Win32Window:
+    """
+    Searches all open windows for a title containing 'Bejeweled 3'
+    and returns the first matching window. Returns None if not found.
+    """
+    window_titles = gw.getAllTitles()
+    for title in window_titles:
+        if "Bejeweled 3" in title:
+            return gw.getWindowsWithTitle(title)[0]
+    return None
 
-monitor = {
-    "top": tw_top,
-    "left": tw_left,
-    "width": tw_width,
-    "height": tw_height
-}
+def create_monitor_region(window: gw.Win32Window, scale_factor: float) -> dict:
+    """
+    Given a window and the scale factor, returns the bounding region
+    for the entire window as a dictionary with 'top', 'left', 'width', 'height'.
+    """
+    return {
+        "top": int(window.top * scale_factor),
+        "left": int(window.left * scale_factor),
+        "width": int(window.width * scale_factor),
+        "height": int(window.height * scale_factor)
+    }
 
-monitor_grid = {
-    "top": tw_top + 175,
-    "left": tw_left + 533,
-    "width": 1026,
-    "height": 1026
-}
+def create_grid_region(window_region: dict) -> dict:
+    """
+    Given the bounding region of the entire window, define the
+    sub-region that corresponds to the 8x8 gem grid.
 
-print("Monitor Grid:", monitor_grid)
+    Adjust offsets (175, 533, etc.) and dimensions (1026x1026) as needed.
+    """
+    return {
+        "top": window_region["top"] + 175,
+        "left": window_region["left"] + 533,
+        "width": 1026,
+        "height": 1026
+    }
 
-grid_size = 8
-cell_width = monitor_grid["width"] // grid_size
-cell_height = monitor_grid["height"] // grid_size
+def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
+    """
+    Creates a list of grid squares for the gem area. Each square is a dictionary
+    containing the row, col, and pixel coordinates (top_left, bottom_right).
+    """
+    squares = []
+    cell_width = grid_region["width"] // grid_size
+    cell_height = grid_region["height"] // grid_size
 
-grid_squares = []
-for row in range(grid_size):
-    for col in range(grid_size):
-        top_left_x = monitor_grid["left"] + col * cell_width
-        top_left_y = monitor_grid["top"] + row * cell_height
-        bottom_right_x = top_left_x + cell_width
-        bottom_right_y = top_left_y + cell_height
+    for row in range(grid_size):
+        for col in range(grid_size):
+            top_left_x = grid_region["left"] + col * cell_width
+            top_left_y = grid_region["top"] + row * cell_height
+            bottom_right_x = top_left_x + cell_width
+            bottom_right_y = top_left_y + cell_height
 
-        grid_squares.append({
-            "row": row,
-            "col": col,
-            "top_left": (top_left_x, top_left_y),
-            "bottom_right": (bottom_right_x, bottom_right_y)
-        })
+            squares.append({
+                "row": row,
+                "col": col,
+                "top_left": (top_left_x, top_left_y),
+                "bottom_right": (bottom_right_x, bottom_right_y)
+            })
+    return squares
 
-def compare_images_hist(img1, img2):
+def compare_images_hist(img1: np.ndarray, img2: np.ndarray) -> float:
+    """
+    Compares two images by resizing them to 61x61, converting to HSV,
+    computing and normalizing 3D histograms, and then returning
+    the correlation coefficient as a similarity metric.
+    """
     # Resize both images to the same size
     img1 = cv2.resize(img1, (61, 61))
     img2 = cv2.resize(img2, (61, 61))
@@ -90,9 +112,14 @@ def compare_images_hist(img1, img2):
     similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
     return similarity
 
-def identify_gem_type(square_img, reference_images):
+def identify_gem_type(square_img: np.ndarray, reference_images: dict) -> str:
+    """
+    Identifies the gem type by comparing the square image to each
+    reference image and returning the name of the gem with the
+    highest histogram correlation.
+    """
     max_similarity = -1
-    identified_gem = "U"
+    identified_gem = "U"  # Unknown by default
 
     for gem_name, ref_img in reference_images.items():
         similarity = compare_images_hist(square_img, ref_img)
@@ -102,111 +129,152 @@ def identify_gem_type(square_img, reference_images):
 
     return identified_gem
 
-# Video writer setup (optional: for saving the recording)
-fps = 7
-fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Codec for AVI files
-out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (monitor_grid["width"], monitor_grid["height"]))
+def capture_and_process_frame(
+    sct: mss.mss,
+    grid_region: dict,
+    grid_squares: list,
+    reference_images: dict,
+    video_out: cv2.VideoWriter
+) -> None:
+    """
+    Captures a screenshot of the grid region, identifies each gem in
+    the 8x8 cells, draws the gem label onto the frame, and writes
+    the frame to the video output.
+    """
+    screenshot = sct.grab(grid_region)
+    img = np.array(screenshot)
+    img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-# Capture loop
-with mss.mss() as sct:
-    try:
-        print("Recording started. Use Ctrl+C to stop.")
-        prev_time = time.time()
-        while True:
-            # Capture the game window
-            start_time = time.time()
-            screenshot = sct.grab(monitor_grid)
-            img = np.array(screenshot)
-            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert to BGR for OpenCV
+    grid_size = 8
+    color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
 
-            height, width, _ = img.shape
-            grid_color = (0, 0, 255)  # Red color for the grid
-            grid_thickness = 2
-            grid_size = 8
+    for square in grid_squares:
+        row = square["row"]
+        col = square["col"]
 
-            cell_width = width // grid_size
-            cell_height = height // grid_size
+        # Adjust coordinates for the cropped region
+        top_left = (
+            square["top_left"][0] - grid_region["left"],
+            square["top_left"][1] - grid_region["top"]
+        )
+        bottom_right = (
+            square["bottom_right"][0] - grid_region["left"],
+            square["bottom_right"][1] - grid_region["top"]
+        )
 
-            color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
-            
-            for square in grid_squares:
-                row = square["row"]
-                col = square["col"]
-                top_left = (
-                    square["top_left"][0] - monitor_grid["left"],
-                    square["top_left"][1] - monitor_grid["top"]
-                )
-                bottom_right = (
-                    square["bottom_right"][0] - monitor_grid["left"],
-                    square["bottom_right"][1] - monitor_grid["top"]
-                )
+        # Calculate bounding box size
+        width = bottom_right[0] - top_left[0]
+        height = bottom_right[1] - top_left[1]
 
-                # Calculate dimensions
-                height = bottom_right[1] - top_left[1]
-                width = bottom_right[0] - top_left[0]
+        # Crop the central area of the cell
+        cropped_top_left = (
+            top_left[0] + width // 4,
+            top_left[1] + height // 4
+        )
+        cropped_bottom_right = (
+            bottom_right[0] - width // 4,
+            bottom_right[1] - height // 4
+        )
+        square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
+                         cropped_top_left[0]:cropped_bottom_right[0]]
 
-                # Adjust coordinates for the cropped region
-                cropped_top_left = (
-                    top_left[0] + width // 4,
-                    top_left[1] + height // 4
-                )
-                cropped_bottom_right = (
-                    bottom_right[0] - width // 4,
-                    bottom_right[1] - height // 4
-                )
+        # Identify gem type
+        gem_type = identify_gem_type(square_img, reference_images)
+        color_labels[row][col] = gem_type
 
-                # Crop the square region using cropped coordinates
-                square_img = img[cropped_top_left[1]:cropped_bottom_right[1], cropped_top_left[0]:cropped_bottom_right[0]]
+    # Draw labels on the image
+    for square in grid_squares:
+        row = square["row"]
+        col = square["col"]
+        label = color_labels[row][col]
 
-                gem_type = identify_gem_type(square_img, reference_gems)
+        top_left = (
+            square["top_left"][0] - grid_region["left"],
+            square["top_left"][1] - grid_region["top"]
+        )
+        bottom_right = (
+            square["bottom_right"][0] - grid_region["left"],
+            square["bottom_right"][1] - grid_region["top"]
+        )
 
-                # Draw rectangle using cropped coordinates
-                # cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
+        center_x = (top_left[0] + bottom_right[0]) // 2
+        center_y = (top_left[1] + bottom_right[1]) // 2
 
-                color_labels[row][col] = gem_type
+        cv2.putText(
+            img,
+            label,
+            (center_x - 20, center_y + 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            2,
+            (0, 0, 0),
+            4,
+            cv2.LINE_AA
+        )
 
-            # Draw the labels on the image
-            for square in grid_squares:
-                top_left = (
-                    square["top_left"][0] - monitor_grid["left"],
-                    square["top_left"][1] - monitor_grid["top"]
-                )
-                bottom_right = (
-                    square["bottom_right"][0] - monitor_grid["left"],
-                    square["bottom_right"][1] - monitor_grid["top"]
-                )
+    # Write the labeled frame to the video file
+    video_out.write(img)
 
-                 # Get the center of the square
-                center_x = (top_left[0] + bottom_right[0]) // 2
-                center_y = (top_left[1] + bottom_right[1]) // 2
+def main():
+    """
+    Main function that sets up the environment, locates the Bejeweled 3 window,
+    initializes the video writer, and runs the capture loop.
+    """
+    # Load reference gem images
+    reference_gems = load_reference_images("gems")
 
-                # Get the color label
-                row = square["row"]
-                col = square["col"]
-                label = color_labels[row][col]
+    # Get high-DPI scaling factor
+    scale_factor = get_scale_factor()
 
-                #Render the label in the center of the square
-                cv2.putText(
-                    img, label, (center_x - 20, center_y + 20),  # Slight offset to center the text
-                    cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,0), 4, cv2.LINE_AA
-                )
+    # Locate the Bejeweled 3 window
+    target_window = find_bejeweled_window()
+    if not target_window:
+        print("Game window not found. Make sure Bejeweled 3 is running and visible.")
+        return
 
-            # Write the frame to the video file
-            out.write(img)
+    # Calculate monitor and grid region
+    window_region = create_monitor_region(target_window, scale_factor)
+    grid_region = create_grid_region(window_region)
+    grid_squares = create_grid_squares(grid_region, grid_size=8)
 
-            # Calculate elapsed time for this frame and FPS
-            frame_time = time.time() - start_time
-            fps_live = 1 / frame_time if frame_time > 0 else 0
-            print(f"Live FPS: {fps_live:.2f}")
+    # Report found window and grid info
+    print(f"Window Found: {target_window.title}")
+    print(f"Top-left: ({window_region['left']}, {window_region['top']})")
+    print(f"Size: {window_region['width']}x{window_region['height']}")
+    print("Monitor Grid:", grid_region)
 
-            # Ensure consistent frame rate (sleep if needed)
-            elapsed_time = time.time() - prev_time
-            time.sleep(max(1 / fps - elapsed_time, 0))
+    # Set up video writer
+    fps = 7
+    fourcc = cv2.VideoWriter_fourcc(*"XVID")
+    out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (grid_region["width"], grid_region["height"]))
+
+    # Capture loop
+    with mss.mss() as sct:
+        try:
+            print("Recording started. Press Ctrl+C to stop.")
             prev_time = time.time()
-    except KeyboardInterrupt:
-        print("Recording stopped by user.")
-    finally:
-        # Ensure resources are released properly
-        print("Cleaning up...")
-        out.release()
-        cv2.destroyAllWindows()
+
+            while True:
+                start_time = time.time()
+
+                # Capture and process the current frame
+                capture_and_process_frame(sct, grid_region, grid_squares, reference_gems, out)
+
+                # Calculate and print live FPS
+                frame_time = time.time() - start_time
+                fps_live = 1 / frame_time if frame_time > 0 else 0
+                print(f"Live FPS: {fps_live:.2f}")
+
+                # Ensure a steady frame rate
+                elapsed_time = time.time() - prev_time
+                time.sleep(max(1 / fps - elapsed_time, 0))
+                prev_time = time.time()
+
+        except KeyboardInterrupt:
+            print("Recording stopped by user.")
+        finally:
+            print("Cleaning up...")
+            out.release()
+            cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
