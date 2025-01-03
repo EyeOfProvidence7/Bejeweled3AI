@@ -1,6 +1,7 @@
 import glob
 import time
 import ctypes
+import os
 
 import cv2
 import numpy as np
@@ -134,7 +135,8 @@ def capture_and_process_frame(
     grid_region: dict,
     grid_squares: list,
     reference_images: dict,
-    video_out: cv2.VideoWriter
+    video_out: cv2.VideoWriter,
+    frame_count: int
 ) -> None:
     """
     Captures a screenshot of the grid region, identifies each gem in
@@ -143,6 +145,18 @@ def capture_and_process_frame(
     """
     screenshot = sct.grab(grid_region)
     img = np.array(screenshot)
+
+    frames_dir = "frames"
+    os.makedirs(frames_dir, exist_ok=True)
+
+    # Create a directory for the current frame
+    frame_dir = os.path.join(frames_dir, f"frame_{frame_count:05d}")
+    os.makedirs(frame_dir, exist_ok=True)
+
+    # Save the frame as an image inside the directory
+    frame_path = os.path.join(frame_dir, "image.png")
+    cv2.imwrite(frame_path, img)
+
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     grid_size = 8
@@ -255,12 +269,13 @@ def main():
         try:
             print("Recording started. Press Ctrl+C to stop.")
             prev_time = time.time()
+            frame_count = 0
 
             while True:
                 start_time = time.time()
 
                 # Capture and process the current frame
-                capture_and_process_frame(sct, grid_region, grid_squares, reference_gems, out)
+                capture_and_process_frame(sct, grid_region, grid_squares, reference_gems, out, frame_count)
 
                 # Calculate and print live FPS
                 frame_time = time.time() - start_time
@@ -271,6 +286,8 @@ def main():
                 elapsed_time = time.time() - prev_time
                 time.sleep(max(1 / fps - elapsed_time, 0))
                 prev_time = time.time()
+
+                frame_count += 1
 
         except KeyboardInterrupt:
             print("Recording stopped by user.")
