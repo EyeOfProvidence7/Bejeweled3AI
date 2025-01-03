@@ -147,6 +147,7 @@ def capture_and_process_frame(
 
     grid_size = 8
     color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
+    some_weird_factor = 4 # 2 makes it infinitely small, 4 make a square half the size of the original. Etc etc increasing this number from 2 to infinity probably will equate to the box being the same as the original
 
     for square in grid_squares:
         row = square["row"]
@@ -168,15 +169,17 @@ def capture_and_process_frame(
 
         # Crop the central area of the cell
         cropped_top_left = (
-            top_left[0] + width // 4,
-            top_left[1] + height // 4
+            top_left[0] + int(width / some_weird_factor),
+            top_left[1] + int(height / some_weird_factor)
         )
         cropped_bottom_right = (
-            bottom_right[0] - width // 4,
-            bottom_right[1] - height // 4
+            bottom_right[0] - int(width / some_weird_factor),
+            bottom_right[1] - int(height / some_weird_factor)
         )
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
+        
+        #cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
 
         # Identify gem type
         gem_type = identify_gem_type(square_img, reference_images)
