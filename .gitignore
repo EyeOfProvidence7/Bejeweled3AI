@@ -30,3 +30,5 @@ pip-log.txt
 # requirements.txt
 
 game_recording.avi
+
+frames/*
