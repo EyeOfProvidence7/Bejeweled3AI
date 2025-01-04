@@ -94,16 +94,17 @@ def compare_images_hist(img1: np.ndarray, img2: np.ndarray) -> float:
     the correlation coefficient as a similarity metric.
     """
     # Resize both images to the same size
-    img1 = cv2.resize(img1, (61, 61))
-    img2 = cv2.resize(img2, (61, 61))
+    img1 = cv2.resize(img1, (26, 26))
+    img2 = cv2.resize(img2, (26, 26))
 
     # Convert to HSV color space
     img1_hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
     img2_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
 
     # Compute histograms
-    hist1 = cv2.calcHist([img1_hsv], [0, 1, 2], None, [50, 50, 50], [0, 180, 0, 256, 0, 256])
-    hist2 = cv2.calcHist([img2_hsv], [0, 1, 2], None, [50, 50, 50], [0, 180, 0, 256, 0, 256])
+    hist1 = cv2.calcHist([img1_hsv], [0, 1, 2], None, [16, 16, 16], [0, 180, 0, 256, 0, 256])
+    hist2 = cv2.calcHist([img2_hsv], [0, 1, 2], None, [16, 16, 16], [0, 180, 0, 256, 0, 256])
+
 
     # Normalize histograms
     hist1 = cv2.normalize(hist1, hist1).flatten()
@@ -146,16 +147,16 @@ def capture_and_process_frame(
     screenshot = sct.grab(grid_region)
     img = np.array(screenshot)
 
-    frames_dir = "frames"
-    os.makedirs(frames_dir, exist_ok=True)
+    #frames_dir = "frames"
+    #os.makedirs(frames_dir, exist_ok=True)
 
     # Create a directory for the current frame
-    frame_dir = os.path.join(frames_dir, f"frame_{frame_count:05d}")
-    os.makedirs(frame_dir, exist_ok=True)
+    #frame_dir = os.path.join(frames_dir, f"frame_{frame_count:05d}")
+    #os.makedirs(frame_dir, exist_ok=True)
 
     # Save the frame as an image inside the directory
-    frame_path = os.path.join(frame_dir, "image.png")
-    cv2.imwrite(frame_path, img)
+    #frame_path = os.path.join(frame_dir, "image.png")
+    #cv2.imwrite(frame_path, img)
 
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
@@ -193,8 +194,8 @@ def capture_and_process_frame(
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
         
-        square_img_path = os.path.join(frame_dir, f"square_{row}_{col}.png")
-        cv2.imwrite(square_img_path, square_img)
+        #square_img_path = os.path.join(frame_dir, f"square_{row}_{col}.png")
+        #cv2.imwrite(square_img_path, square_img)
         
         #cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
 
@@ -263,7 +264,7 @@ def main():
     print("Monitor Grid:", grid_region)
 
     # Set up video writer
-    fps = 7
+    fps = 24
     fourcc = cv2.VideoWriter_fourcc(*"XVID")
     out = cv2.VideoWriter("game_recording.avi", fourcc, fps, (grid_region["width"], grid_region["height"]))
 
