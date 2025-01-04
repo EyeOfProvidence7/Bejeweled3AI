@@ -147,17 +147,6 @@ def capture_and_process_frame(
     screenshot = sct.grab(grid_region)
     img = np.array(screenshot)
 
-    #frames_dir = "frames"
-    #os.makedirs(frames_dir, exist_ok=True)
-
-    # Create a directory for the current frame
-    #frame_dir = os.path.join(frames_dir, f"frame_{frame_count:05d}")
-    #os.makedirs(frame_dir, exist_ok=True)
-
-    # Save the frame as an image inside the directory
-    #frame_path = os.path.join(frame_dir, "image.png")
-    #cv2.imwrite(frame_path, img)
-
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     grid_size = 8
@@ -193,9 +182,6 @@ def capture_and_process_frame(
         )
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
-        
-        #square_img_path = os.path.join(frame_dir, f"square_{row}_{col}.png")
-        #cv2.imwrite(square_img_path, square_img)
         
         #cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
 
