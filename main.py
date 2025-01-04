@@ -161,7 +161,7 @@ def capture_and_process_frame(
 
     grid_size = 8
     color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
-    some_weird_factor = 4 # 2 makes it infinitely small, 4 make a square half the size of the original. Etc etc increasing this number from 2 to infinity probably will equate to the box being the same as the original
+    some_weird_factor = 2.5 # 2 makes it infinitely small, 4 make a square half the size of the original. Etc etc increasing this number from 2 to infinity probably will equate to the box being the same as the original
 
     for square in grid_squares:
         row = square["row"]
@@ -192,6 +192,9 @@ def capture_and_process_frame(
         )
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
+        
+        square_img_path = os.path.join(frame_dir, f"square_{row}_{col}.png")
+        cv2.imwrite(square_img_path, square_img)
         
         #cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
 
