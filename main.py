@@ -108,6 +108,7 @@ def capture_and_process_frame(
 
     grid_size = 8
     color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
+    some_weird_factor = 64 # 2 makes it infinitely small, 4 make a square half the size of the original. Etc etc increasing this number from 2 to infinity probably will equate to the box being the same as the original
 
     for square in grid_squares:
         row = square["row"]
@@ -123,8 +124,21 @@ def capture_and_process_frame(
             square["bottom_right"][1] - grid_region["top"]
         )
 
-        square_img = img[top_left[1]:bottom_right[1],
-                         top_left[0]:bottom_right[0]]
+        # Calculate bounding box size
+        width = bottom_right[0] - top_left[0]
+        height = bottom_right[1] - top_left[1]
+        # Crop the central area of the cell
+        cropped_top_left = (
+            top_left[0] + int(width / some_weird_factor),
+            top_left[1] + int(height / some_weird_factor)
+        )
+        cropped_bottom_right = (
+            bottom_right[0] - int(width / some_weird_factor),
+            bottom_right[1] - int(height / some_weird_factor)
+        )
+
+        square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
+                         cropped_top_left[0]:cropped_bottom_right[0]]
         
         # Save the cropped square image
         square_filename = os.path.join(frame_dir, f"square_{row}_{col}.png")
