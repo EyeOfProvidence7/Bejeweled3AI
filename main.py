@@ -1,7 +1,5 @@
-import glob
 import time
 import ctypes
-import os
 
 import cv2
 import numpy as np
@@ -75,49 +73,8 @@ def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
             })
     return squares
 
-def compare_images_hist(img1: np.ndarray, img2: np.ndarray) -> float:
-    """
-    Compares two images by resizing them to 61x61, converting to HSV,
-    computing and normalizing 3D histograms, and then returning
-    the correlation coefficient as a similarity metric.
-    """
-    # Resize both images to the same size
-    img1 = cv2.resize(img1, (26, 26))
-    img2 = cv2.resize(img2, (26, 26))
-
-    # Convert to HSV color space
-    img1_hsv = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
-    img2_hsv = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
-
-    # Compute histograms
-    hist1 = cv2.calcHist([img1_hsv], [0, 1, 2], None, [16, 16, 16], [0, 180, 0, 256, 0, 256])
-    hist2 = cv2.calcHist([img2_hsv], [0, 1, 2], None, [16, 16, 16], [0, 180, 0, 256, 0, 256])
-
-
-    # Normalize histograms
-    hist1 = cv2.normalize(hist1, hist1).flatten()
-    hist2 = cv2.normalize(hist2, hist2).flatten()
-
-    # Compute similarity (correlation)
-    similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
-    return similarity
-
 def identify_gem_type(square_img: np.ndarray, reference_images: dict) -> str:
-    """
-    Identifies the gem type by comparing the square image to each
-    reference image and returning the name of the gem with the
-    highest histogram correlation.
-    """
-    max_similarity = -1
-    identified_gem = "U"  # Unknown by default
-
-    for gem_name, ref_img in reference_images.items():
-        similarity = compare_images_hist(square_img, ref_img)
-        if similarity > max_similarity:
-            max_similarity = similarity
-            identified_gem = gem_name
-
-    return identified_gem
+    pass
 
 def capture_and_process_frame(
     sct: mss.mss,
