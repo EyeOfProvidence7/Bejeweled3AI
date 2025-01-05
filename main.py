@@ -130,7 +130,7 @@ def capture_and_process_frame(
         square_filename = os.path.join(frame_dir, f"square_{row}_{col}.png")
         cv2.imwrite(square_filename, square_img)
         
-        cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
+        #cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
         # Identify gem type
         #gem_type = identify_gem_type(square_img, reference_images)
@@ -212,7 +212,7 @@ def main():
                 start_time = time.time()
 
                 # Capture and process the current frame
-                capture_and_process_frame(sct, grid_region, grid_squares, out)
+                capture_and_process_frame(sct, grid_region, grid_squares, out, frame_count)
 
                 # Calculate and print live FPS
                 frame_time = time.time() - start_time
