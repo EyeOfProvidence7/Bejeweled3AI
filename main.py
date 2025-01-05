@@ -73,7 +73,7 @@ def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
             })
     return squares
 
-def identify_gem_type(square_img: np.ndarray, reference_images: dict) -> str:
+def identify_gem_type() -> str:
     pass
 
 def capture_and_process_frame(
