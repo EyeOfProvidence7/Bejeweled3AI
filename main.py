@@ -1,5 +1,6 @@
 import time
 import ctypes
+import os
 
 import cv2
 import numpy as np
@@ -81,12 +82,25 @@ def capture_and_process_frame(
     grid_region: dict,
     grid_squares: list,
     video_out: cv2.VideoWriter,
+    frame_count: int
 ) -> None:
     """
     Captures a screenshot of the grid region, identifies each gem in
     the 8x8 cells, draws the gem label onto the frame, and writes
     the frame to the video output.
     """
+
+    # Create the parent directory for frames if it doesn't exist
+    frames_dir = "frames"
+    if not os.path.exists(frames_dir):
+        os.makedirs(frames_dir)
+
+    # Create a subdirectory for the current frame
+    frame_dir = os.path.join(frames_dir, f"frames_{frame_count}")
+    if not os.path.exists(frame_dir):
+        os.makedirs(frame_dir)
+
+    
     screenshot = sct.grab(grid_region)
     img = np.array(screenshot)
 
@@ -111,6 +125,10 @@ def capture_and_process_frame(
 
         square_img = img[top_left[1]:bottom_right[1],
                          top_left[0]:bottom_right[0]]
+        
+        # Save the cropped square image
+        square_filename = os.path.join(frame_dir, f"square_{row}_{col}.png")
+        cv2.imwrite(square_filename, square_img)
         
         cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
