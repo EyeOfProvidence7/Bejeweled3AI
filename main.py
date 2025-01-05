@@ -8,18 +8,6 @@ import numpy as np
 import mss
 import pygetwindow as gw
 
-def load_reference_images(gems_dir: str) -> dict:
-    """
-    Loads all reference gem images from the given directory and returns
-    a dictionary mapping gem names to their corresponding images.
-    """
-    reference_gems = {}
-    for filepath in glob.glob(f"{gems_dir}/*.png"):
-        # Extract gem name from the filename (e.g., "red.png" -> "red")
-        gem_name = filepath.split("\\")[-1].split(".")[0]
-        reference_gems[gem_name] = cv2.imread(filepath, cv2.IMREAD_COLOR)
-    return reference_gems
-
 def get_scale_factor() -> float:
     """
     Returns the Windows scale factor for high-DPI devices.
@@ -135,9 +123,7 @@ def capture_and_process_frame(
     sct: mss.mss,
     grid_region: dict,
     grid_squares: list,
-    reference_images: dict,
     video_out: cv2.VideoWriter,
-    frame_count: int
 ) -> None:
     """
     Captures a screenshot of the grid region, identifies each gem in
@@ -151,7 +137,6 @@ def capture_and_process_frame(
 
     grid_size = 8
     color_labels = [["" for _ in range(grid_size)] for _ in range(grid_size)]
-    some_weird_factor = 2.5 # 2 makes it infinitely small, 4 make a square half the size of the original. Etc etc increasing this number from 2 to infinity probably will equate to the box being the same as the original
 
     for square in grid_squares:
         row = square["row"]
@@ -167,27 +152,14 @@ def capture_and_process_frame(
             square["bottom_right"][1] - grid_region["top"]
         )
 
-        # Calculate bounding box size
-        width = bottom_right[0] - top_left[0]
-        height = bottom_right[1] - top_left[1]
-
-        # Crop the central area of the cell
-        cropped_top_left = (
-            top_left[0] + int(width / some_weird_factor),
-            top_left[1] + int(height / some_weird_factor)
-        )
-        cropped_bottom_right = (
-            bottom_right[0] - int(width / some_weird_factor),
-            bottom_right[1] - int(height / some_weird_factor)
-        )
-        square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
-                         cropped_top_left[0]:cropped_bottom_right[0]]
+        square_img = img[top_left[1]:bottom_right[1],
+                         top_left[0]:bottom_right[0]]
         
-        #cv2.rectangle(img, cropped_top_left, cropped_bottom_right, (0, 255, 0), 1)
+        cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
         # Identify gem type
-        gem_type = identify_gem_type(square_img, reference_images)
-        color_labels[row][col] = gem_type
+        #gem_type = identify_gem_type(square_img, reference_images)
+        color_labels[row][col] = "U"
 
     # Draw labels on the image
     for square in grid_squares:
@@ -227,7 +199,7 @@ def main():
     initializes the video writer, and runs the capture loop.
     """
     # Load reference gem images
-    reference_gems = load_reference_images("gems")
+    # reference_gems = load_reference_images("gems")
 
     # Get high-DPI scaling factor
     scale_factor = get_scale_factor()
@@ -265,7 +237,7 @@ def main():
                 start_time = time.time()
 
                 # Capture and process the current frame
-                capture_and_process_frame(sct, grid_region, grid_squares, reference_gems, out, frame_count)
+                capture_and_process_frame(sct, grid_region, grid_squares, out)
 
                 # Calculate and print live FPS
                 frame_time = time.time() - start_time
