@@ -164,11 +164,11 @@ def capture_and_process_frame(
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
         
-        processed_img = extract_gem_grabcut(square_img)
+        #processed_img = extract_gem_grabcut(square_img)
         
         # Save the cropped square image
         square_filename = os.path.join(frame_dir, f"square_{row}_{col}.png")
-        cv2.imwrite(square_filename, processed_img)
+        cv2.imwrite(square_filename, square_img)
         
         #cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
