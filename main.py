@@ -77,6 +77,30 @@ def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
 def identify_gem_type() -> str:
     pass
 
+def extract_gem_grabcut(square_img):
+    """
+    Uses OpenCV's GrabCut algorithm to extract the foreground gem
+    while making the background black.
+    """
+    mask = np.zeros(square_img.shape[:2], np.uint8)
+
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+
+    # Define a rectangle covering the entire image (excluding 1px borders)
+    rect = (1, 1, square_img.shape[1] - 2, square_img.shape[0] - 2)
+
+    # Apply GrabCut algorithm
+    cv2.grabCut(square_img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+
+    # Convert mask to binary: 0 & 2 -> background, 1 & 3 -> foreground
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype("uint8")
+
+    # Apply mask to keep only the foreground
+    extracted = square_img * mask2[:, :, np.newaxis]
+
+    return extracted
+
 def capture_and_process_frame(
     sct: mss.mss,
     grid_region: dict,
@@ -140,9 +164,11 @@ def capture_and_process_frame(
         square_img = img[cropped_top_left[1]:cropped_bottom_right[1],
                          cropped_top_left[0]:cropped_bottom_right[0]]
         
+        processed_img = extract_gem_grabcut(square_img)
+        
         # Save the cropped square image
         square_filename = os.path.join(frame_dir, f"square_{row}_{col}.png")
-        cv2.imwrite(square_filename, square_img)
+        cv2.imwrite(square_filename, processed_img)
         
         #cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
