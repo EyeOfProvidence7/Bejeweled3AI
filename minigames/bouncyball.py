@@ -1,11 +1,12 @@
 import pygame
 import sys
 import random
+import math
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Game 1 - Bouncy Ball with Gravity & Color Trails")
+    pygame.display.set_caption("Game 2 - Repelled by Mouse")
     clock = pygame.time.Clock()
 
     ball_radius = 20
@@ -16,11 +17,11 @@ def main():
     gravity = 0.3
     bounce_energy_loss = 0.8
 
-    # HSL hue from 0 to 360
     hue = 0
-
-    # Semi-transparent trail
     trail_surface = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    repel_strength = 1000  # tweak this to feel right
+    min_distance = 20       # clamp to avoid insane speeds
 
     running = True
     while running:
@@ -28,14 +29,34 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Physics
+        # Apply gravity
         ball_dy += gravity
+
+        # Get mouse position
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        # Vector from mouse to ball
+        dx = ball_x - mouse_x
+        dy = ball_y - mouse_y
+        distance_sq = dx ** 2 + dy ** 2
+        distance = max(math.sqrt(distance_sq), min_distance)
+
+        # Normalize vector
+        nx = dx / distance
+        ny = dy / distance
+
+        # Apply repelling force: F = k / r^2
+        force = repel_strength / distance_sq
+        ball_dx += nx * force
+        ball_dy += ny * force
+
+        # Move ball
         ball_x += ball_dx
         ball_y += ball_dy
 
+        # Bounce off walls
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= 800:
             ball_dx *= -1
-
         if ball_y + ball_radius >= 600:
             ball_y = 600 - ball_radius
             ball_dy *= -1
@@ -47,7 +68,7 @@ def main():
         # Update color
         hue = (hue + 1) % 360
         ball_color = pygame.Color(0)
-        ball_color.hsva = (hue, 100, 100, 100)  # (Hue, Saturation, Value, Alpha)
+        ball_color.hsva = (hue, 100, 100, 100)
 
         # Draw trail
         trail_surface.fill((0, 0, 0, 20))
