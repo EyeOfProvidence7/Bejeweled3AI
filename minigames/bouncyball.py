@@ -55,8 +55,14 @@ def main():
         ball_y += ball_dy
 
         # Bounce off walls
-        if ball_x - ball_radius <= 0 or ball_x + ball_radius >= 800:
+        if ball_x - ball_radius <= 0:
+            ball_x = ball_radius
             ball_dx *= -1
+            ball_dx *= bounce_energy_loss
+        elif ball_x + ball_radius >= 800:
+            ball_x = 800 - ball_radius
+            ball_dx *= -1
+            ball_dx *= bounce_energy_loss
         if ball_y + ball_radius >= 600:
             ball_y = 600 - ball_radius
             ball_dy *= -1
@@ -64,6 +70,7 @@ def main():
         elif ball_y - ball_radius <= 0:
             ball_y = ball_radius
             ball_dy *= -1
+            ball_dy *= bounce_energy_loss
 
         # Update color
         hue = (hue + 1) % 360
