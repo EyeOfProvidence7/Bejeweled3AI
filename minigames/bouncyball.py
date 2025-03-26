@@ -5,20 +5,21 @@ import random
 def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Game 1 - Gravity Bouncer with Trippy Trails")
+    pygame.display.set_caption("Game 1 - Bouncy Ball with Gravity & Color Trails")
     clock = pygame.time.Clock()
 
     ball_radius = 20
     ball_x = random.randint(ball_radius, 800 - ball_radius)
     ball_y = random.randint(ball_radius, 600 - ball_radius)
     ball_dx = 4
-    ball_dy = 0  # Start with no vertical movement
-    gravity = 0.3  # Constant downward acceleration
-    bounce_energy_loss = 0.8  # Lose some speed on bounce
+    ball_dy = 0
+    gravity = 0.3
+    bounce_energy_loss = 0.8
 
-    ball_color = (255, 255, 255)  # white
+    # HSL hue from 0 to 360
+    hue = 0
 
-    # Instead of clearing the screen, draw a semi-transparent black rectangle
+    # Semi-transparent trail
     trail_surface = pygame.Surface((800, 600), pygame.SRCALPHA)
 
     running = True
@@ -27,27 +28,29 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Apply gravity
+        # Physics
         ball_dy += gravity
-
-        # Move ball
         ball_x += ball_dx
         ball_y += ball_dy
 
-        # Bounce off walls
         if ball_x - ball_radius <= 0 or ball_x + ball_radius >= 800:
             ball_dx *= -1
 
         if ball_y + ball_radius >= 600:
             ball_y = 600 - ball_radius
             ball_dy *= -1
-            ball_dy *= bounce_energy_loss  # lose some energy
+            ball_dy *= bounce_energy_loss
         elif ball_y - ball_radius <= 0:
             ball_y = ball_radius
             ball_dy *= -1
 
-        # Leave a trail
-        trail_surface.fill((0, 0, 0, 20))  # translucent black rectangle
+        # Update color
+        hue = (hue + 1) % 360
+        ball_color = pygame.Color(0)
+        ball_color.hsva = (hue, 100, 100, 100)  # (Hue, Saturation, Value, Alpha)
+
+        # Draw trail
+        trail_surface.fill((0, 0, 0, 20))
         screen.blit(trail_surface, (0, 0))
 
         # Draw ball
