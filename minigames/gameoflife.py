@@ -5,6 +5,7 @@ import numpy as np
 CELL_SIZE = 10
 GRID_WIDTH = 160
 GRID_HEIGHT = 120
+UI_WIDTH_PIXELS = 200
 FPS = 10
 
 # Colors
@@ -57,7 +58,7 @@ def draw_grid(screen, grid):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+    screen = pygame.display.set_mode((GRID_WIDTH * CELL_SIZE + UI_WIDTH_PIXELS, GRID_HEIGHT * CELL_SIZE))
     pygame.display.set_caption("Conway's Game of Life")
     clock = pygame.time.Clock()
 
