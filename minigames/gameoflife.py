@@ -48,7 +48,7 @@ def draw_grid(screen, grid):
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if grid[y, x] == 1:
-                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                rect = pygame.Rect(x * CELL_SIZE - 1, y * CELL_SIZE - 1, CELL_SIZE - 1, CELL_SIZE - 1)
                 pygame.draw.rect(screen, WHITE, rect)
 
 def draw_ui(screen, fps, slider_rect, slider_handle_x, font):
