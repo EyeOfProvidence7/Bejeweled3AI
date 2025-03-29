@@ -170,7 +170,8 @@ def main():
     time_since_last_step = 0
     paused = False
     step_requested = False
-
+    mouse_down = False
+    drawing_value = 1  # 1 to draw cells, 0 to erase
     running = True
     while running:
         time_delta = clock.tick(60)
@@ -179,6 +180,28 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos
+
+                if mouse_x < GRID_WIDTH * CELL_SIZE and mouse_y < GRID_HEIGHT * CELL_SIZE:
+                    grid_x = mouse_x // CELL_SIZE
+                    grid_y = mouse_y // CELL_SIZE
+
+                    # Toggle or set value based on what's already there
+                    drawing_value = 1 if grid[grid_y, grid_x] == 0 else 0
+                    grid[grid_y, grid_x] = drawing_value
+                    mouse_down = True
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                mouse_down = False
+
+            elif event.type == pygame.MOUSEMOTION and mouse_down:
+                mouse_x, mouse_y = event.pos
+                if mouse_x < GRID_WIDTH * CELL_SIZE and mouse_y < GRID_HEIGHT * CELL_SIZE:
+                    grid_x = mouse_x // CELL_SIZE
+                    grid_y = mouse_y // CELL_SIZE
+                    grid[grid_y, grid_x] = drawing_value
 
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
