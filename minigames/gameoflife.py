@@ -142,10 +142,10 @@ def main():
                     fps = int(1 + relative_pos * 59)  # FPS range: 1 - 60
                     sim_interval = 1000 / fps
 
-            if (not paused and time_since_last_step >= sim_interval) or (paused and step_requested):
-                grid = update_grid(grid, birth_rules, survive_rules)
-                time_since_last_step = 0
-                step_requested = False
+        if (not paused and time_since_last_step >= sim_interval) or (paused and step_requested):
+            grid = update_grid(grid, birth_rules, survive_rules)
+            time_since_last_step = 0
+            step_requested = False
 
 
         draw_grid(screen, grid)
