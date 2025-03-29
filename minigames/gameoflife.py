@@ -38,7 +38,17 @@ def update_grid(grid, birth_rules, survive_rules):
     survive = np.isin(neighbors, survive_rules) & (grid == 1)
     return (birth | survive).astype(np.uint8)
 
-def draw_grid(screen, grid):
+def draw_grid(screen, grid, psychedelic_mode):
+    if not psychedelic_mode:
+        # Standard white cells on black
+        screen.fill(BLACK, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                if grid[y, x] == 1:
+                    rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
+                    pygame.draw.rect(screen, YELLOW, rect)
+        return  # Skip the psychedelic stuff
+
     t = pygame.time.get_ticks() / 1000.0
 
     # Optional: animated dark background
@@ -70,6 +80,7 @@ def main():
     screen = pygame.display.set_mode(screen_size)
     pygame.display.set_caption("Conway's Game of Life with pygame_gui")
     clock = pygame.time.Clock()
+    psychedelic_mode = False
 
     # GUI manager
     manager = pygame_gui.UIManager(screen_size)
@@ -138,6 +149,19 @@ def main():
         manager=manager
     )
 
+    # Psychedelic Mode toggle
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 220), (160, 30)),
+        text="Psychedelic mode",
+        manager=manager
+    )
+    psy_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((element_x, 220), (160, 30)),
+        text="Turn On",
+        manager=manager
+    )
+
+
     grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
     birth_rules, survive_rules = parse_rule(RULE_STRING)
 
@@ -161,11 +185,16 @@ def main():
                     if event.ui_element == pause_button:
                         paused = not paused
                         pause_button.set_text("Play" if paused else "Pause")
+
                     elif event.ui_element == step_button:
                         step_requested = True
+
                     elif event.ui_element == randomize_button:
                         grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
 
+                    elif event.ui_element == psy_button:
+                        psychedelic_mode = not psychedelic_mode
+                        psy_button.set_text("Turn On" if not psychedelic_mode else "Turn Off")
 
                 elif event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     if event.ui_element == rule_input:
@@ -183,7 +212,7 @@ def main():
         fps = int(slider.get_current_value())
         sim_interval = 1000 / fps
 
-        draw_grid(screen, grid)
+        draw_grid(screen, grid, psychedelic_mode)
         manager.draw_ui(screen)
         pygame.display.flip()
 
