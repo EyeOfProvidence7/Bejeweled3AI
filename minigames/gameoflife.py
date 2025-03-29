@@ -106,6 +106,18 @@ def main():
     )
     rule_input.set_text(RULE_STRING)
 
+    # Randomize button
+    randomize_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((element_x, 180), (160, 30)),
+        text='Randomize',
+        manager=manager
+    )
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 180), (160, 30)),
+        text="Randomize grid",
+        manager=manager
+    )
+
     grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
     birth_rules, survive_rules = parse_rule(RULE_STRING)
 
@@ -131,6 +143,9 @@ def main():
                         pause_button.set_text("Play" if paused else "Pause")
                     elif event.ui_element == step_button:
                         step_requested = True
+                    elif event.ui_element == randomize_button:
+                        grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
+
 
                 elif event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     if event.ui_element == rule_input:
