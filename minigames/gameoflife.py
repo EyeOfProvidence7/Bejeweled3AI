@@ -74,6 +74,20 @@ def draw_grid(screen, grid, psychedelic_mode):
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
                 pygame.draw.rect(screen, color, rect)
 
+def draw_legend(surface):
+    font = pygame.font.SysFont("consolas", 16)
+    lines = [
+        "Controls:",
+        "[Space]  Pause / Play",
+        "[S]      Step",
+        "[R]      Randomize",
+        "[C]      Clear",
+        "[P]      Psychedelic Mode",
+    ]
+    for i, text in enumerate(lines):
+        rendered = font.render(text, True, (200, 200, 200))
+        surface.blit(rendered, (10, 10 + i * 20))
+
 def main():
     pygame.init()
     screen_size = (GRID_WIDTH * CELL_SIZE + UI_WIDTH_PIXELS, GRID_HEIGHT * CELL_SIZE)
@@ -217,9 +231,23 @@ def main():
                     grid[grid_y, grid_x] = drawing_value
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                key = event.key
+                if key == pygame.K_SPACE:
                     paused = not paused
                     pause_button.set_text("Play" if paused else "Pause")
+
+                elif key == pygame.K_s:
+                    step_requested = True
+
+                elif key == pygame.K_r:
+                    grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
+
+                elif key == pygame.K_c:
+                    grid[:] = 0
+
+                elif key == pygame.K_p:
+                    psychedelic_mode = not psychedelic_mode
+                    psy_button.set_text("Turn On" if not psychedelic_mode else "Turn Off")
 
             if event.type == pygame.USEREVENT:
                 if event.type == pygame_gui.UI_BUTTON_PRESSED:
@@ -256,6 +284,7 @@ def main():
 
         draw_grid(screen, grid, psychedelic_mode)
         manager.draw_ui(screen)
+        draw_legend(screen)
         pygame.display.flip()
 
     pygame.quit()
