@@ -54,28 +54,54 @@ def main():
     # GUI manager
     manager = pygame_gui.UIManager(screen_size)
 
-    # GUI elements
+    label_x = GRID_WIDTH * CELL_SIZE + 20
+    element_x = label_x + 180  # Controls now to the right
+
+    # FPS Slider
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 20), (160, 24)),
+        text="FPS",
+        manager=manager
+    )
     slider = pygame_gui.elements.UIHorizontalSlider(
-        relative_rect=pygame.Rect((GRID_WIDTH * CELL_SIZE + 20, 20), (160, 20)),
+        relative_rect=pygame.Rect((element_x, 20), (160, 24)),
         start_value=INITIAL_FPS,
         value_range=(1, 60),
         manager=manager
     )
 
+    # Pause button
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 60), (160, 30)),
+        text="Pause simulation",
+        manager=manager
+    )
     pause_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((GRID_WIDTH * CELL_SIZE + 20, 60), (75, 30)),
+        relative_rect=pygame.Rect((element_x, 60), (75, 30)),
         text='Pause',
         manager=manager
     )
 
+    # Step button
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 95), (160, 30)),
+        text="Step once",
+        manager=manager
+    )
     step_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((GRID_WIDTH * CELL_SIZE + 105, 60), (75, 30)),
+        relative_rect=pygame.Rect((element_x, 95), (75, 30)),
         text='Step',
         manager=manager
     )
 
+    # Rule input
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 140), (160, 30)),
+        text="Rule (e.g. B3/S23)",
+        manager=manager
+    )
     rule_input = pygame_gui.elements.UITextEntryLine(
-        relative_rect=pygame.Rect((GRID_WIDTH * CELL_SIZE + 20, 110), (160, 30)),
+        relative_rect=pygame.Rect((element_x, 140), (160, 30)),
         manager=manager
     )
     rule_input.set_text(RULE_STRING)
