@@ -129,6 +129,9 @@ def create_ui_elements(manager):
     pygame_gui.elements.UILabel(rect(label_x, 260, 160, 30), "Clear the grid", manager)
     clear_button = pygame_gui.elements.UIButton(rect(element_x, 260, 160, 30), 'Clear Grid', manager)
 
+    pygame_gui.elements.UILabel(rect(label_x, 300, 160, 30), "Brush size", manager)
+    brush_slider = pygame_gui.elements.UIHorizontalSlider(rect(element_x, 300, 160, 30), 0, (0, 10), manager)
+
     return {
         'slider': slider,
         'pause_button': pause_button,
@@ -137,7 +140,16 @@ def create_ui_elements(manager):
         'randomize_button': randomize_button,
         'psy_button': psy_button,
         'clear_button': clear_button,
+        'brush_slider': brush_slider,
     }
+
+
+def apply_brush(grid, cx, cy, value, radius):
+    for y in range(cy - radius, cy + radius + 1):
+        for x in range(cx - radius, cx + radius + 1):
+            if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
+                if (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2:
+                    grid[y, x] = value
 
 
 def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
@@ -151,8 +163,8 @@ def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
         x, y = event.pos
         if x < GRID_WIDTH * CELL_SIZE and y < GRID_HEIGHT * CELL_SIZE:
             gx, gy = x // CELL_SIZE, y // CELL_SIZE
-            drawing_value = 1 if grid[gy, gx] == 0 else 0
-            grid[gy, gx] = drawing_value
+            brush_size = int(ui['brush_slider'].get_current_value())
+            apply_brush(grid, gx, gy, drawing_value, brush_size)
             mouse_down = True
 
     elif event.type == pygame.MOUSEBUTTONUP:
@@ -162,7 +174,8 @@ def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
         x, y = event.pos
         if x < GRID_WIDTH * CELL_SIZE and y < GRID_HEIGHT * CELL_SIZE:
             gx, gy = x // CELL_SIZE, y // CELL_SIZE
-            grid[gy, gx] = drawing_value
+            brush_size = int(ui['brush_slider'].get_current_value())
+            apply_brush(grid, gx, gy, drawing_value, brush_size)
 
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_SPACE:
@@ -198,6 +211,19 @@ def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
     return running, paused, step_requested, psychedelic_mode, grid, mouse_down, drawing_value, birth_rules, survive_rules
 
 
+def draw_fill_preview(screen, ui, mouse_pos):
+    if mouse_pos[0] < GRID_WIDTH * CELL_SIZE and mouse_pos[1] < GRID_HEIGHT * CELL_SIZE:
+        brush_size = int(ui['brush_slider'].get_current_value())
+        gx, gy = mouse_pos[0] // CELL_SIZE, mouse_pos[1] // CELL_SIZE
+
+        for y in range(gy - brush_size, gy + brush_size + 1):
+            for x in range(gx - brush_size, gx + brush_size + 1):
+                if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
+                    if (x - gx) ** 2 + (y - gy) ** 2 <= brush_size ** 2:
+                        rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
+                        pygame.draw.rect(screen, (100, 100, 255), rect, width=1)
+
+
 def main():
     screen, manager, clock = init_pygame_and_ui()
     ui = create_ui_elements(manager)
@@ -214,10 +240,14 @@ def main():
     drawing_value = 1
     psychedelic_mode = False
     running = True
+    mouse_pos = (0, 0)
+
 
     while running:
         time_delta = clock.tick(60)
         time_since_last_step += time_delta
+        mouse_pos = pygame.mouse.get_pos()
+
 
         for event in pygame.event.get():
             manager.process_events(event)
@@ -238,6 +268,7 @@ def main():
         draw_grid(screen, grid, psychedelic_mode)
         manager.draw_ui(screen)
         draw_legend(screen)
+        draw_fill_preview(screen, ui, mouse_pos)
         pygame.display.flip()
 
     pygame.quit()
