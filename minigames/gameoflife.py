@@ -32,16 +32,15 @@ def update_grid(grid, birth_rules, survive_rules):
     survive = np.isin(neighbors, survive_rules) & (grid == 1)
     return (birth | survive).astype(np.uint8)
 
-def draw_grid(screen, grid, psychedelic_mode):
-    if not psychedelic_mode:
-        screen.fill(BLACK, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
-        for y in range(GRID_HEIGHT):
-            for x in range(GRID_WIDTH):
-                if grid[y, x] == 1:
-                    rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
-                    pygame.draw.rect(screen, YELLOW, rect)
-        return
+def draw_standard_grid(screen, grid):
+    screen.fill(BLACK, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+    for y in range(GRID_HEIGHT):
+        for x in range(GRID_WIDTH):
+            if grid[y, x] == 1:
+                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
+                pygame.draw.rect(screen, YELLOW, rect)
 
+def draw_psychedelic_grid(screen, grid):
     t = pygame.time.get_ticks() / 1000.0
     bg_color = tuple(int(c * 255) for c in colorsys.hsv_to_rgb((t * 0.05) % 1.0, 0.2, 0.07))
     screen.fill(bg_color, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
@@ -58,6 +57,13 @@ def draw_grid(screen, grid, psychedelic_mode):
                 color = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1, 1))
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
                 pygame.draw.rect(screen, color, rect)
+
+def draw_grid(screen, grid, psychedelic_mode):
+    if psychedelic_mode:
+        draw_psychedelic_grid(screen, grid)
+    else:
+        draw_standard_grid(screen, grid)
+
 
 def draw_legend(surface):
     font = pygame.font.SysFont("consolas", 16)
