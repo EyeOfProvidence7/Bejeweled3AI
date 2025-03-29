@@ -2,6 +2,8 @@ import pygame
 import pygame_gui
 import numpy as np
 from scipy.signal import convolve2d
+import colorsys
+import math
 
 # Config
 CELL_SIZE = 10
@@ -37,12 +39,30 @@ def update_grid(grid, birth_rules, survive_rules):
     return (birth | survive).astype(np.uint8)
 
 def draw_grid(screen, grid):
-    screen.fill(BLACK, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+    t = pygame.time.get_ticks() / 1000.0
+
+    # Optional: animated dark background
+    bg_hue = (t * 0.05) % 1.0
+    bg_rgb = colorsys.hsv_to_rgb(bg_hue, 0.2, 0.07)
+    bg_color = tuple(int(c * 255) for c in bg_rgb)
+    screen.fill(bg_color, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+
+    angle = t * 0.2
+    dx = math.cos(angle)
+    dy = math.sin(angle)
+
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if grid[y, x] == 1:
+                weirdness = math.sin(abs(x * 0.05 + t) ** 1.2) * math.cos(abs(y * 0.05 - t) ** 1.1)
+                warp = math.sin(x * 0.1 + y * 0.1 + t * 3) * 0.5
+
+                hue = (0.5 + 0.5 * math.sin(((x * dx + y * dy) * 0.02 + t * 0.5 + weirdness + warp))) % 1.0
+
+                rgb = colorsys.hsv_to_rgb(hue, 1, 1)
+                color = tuple(int(c * 255) for c in rgb)
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
-                pygame.draw.rect(screen, YELLOW, rect)
+                pygame.draw.rect(screen, color, rect)
 
 def main():
     pygame.init()
