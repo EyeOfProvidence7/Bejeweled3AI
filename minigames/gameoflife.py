@@ -125,6 +125,18 @@ def main():
         manager=manager
     )
 
+    # Clear grid button
+    clear_button = pygame_gui.elements.UIButton(
+        relative_rect=pygame.Rect((element_x, 260), (160, 30)),
+        text='Clear Grid',
+        manager=manager
+    )
+    pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((label_x, 260), (160, 30)),
+        text="Clear the grid",
+        manager=manager
+    )
+
     # Rule input
     pygame_gui.elements.UILabel(
         relative_rect=pygame.Rect((label_x, 140), (160, 30)),
@@ -178,6 +190,7 @@ def main():
         time_since_last_step += time_delta
 
         for event in pygame.event.get():
+            manager.process_events(event)
             if event.type == pygame.QUIT:
                 running = False
             
@@ -203,8 +216,13 @@ def main():
                     grid_y = mouse_y // CELL_SIZE
                     grid[grid_y, grid_x] = drawing_value
 
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    paused = not paused
+                    pause_button.set_text("Play" if paused else "Pause")
+
             if event.type == pygame.USEREVENT:
-                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == pause_button:
                         paused = not paused
                         pause_button.set_text("Play" if paused else "Pause")
@@ -215,15 +233,16 @@ def main():
                     elif event.ui_element == randomize_button:
                         grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
 
+                    elif event.ui_element == clear_button:
+                        grid[:] = 0
+
                     elif event.ui_element == psy_button:
                         psychedelic_mode = not psychedelic_mode
                         psy_button.set_text("Turn On" if not psychedelic_mode else "Turn Off")
 
-                elif event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
+                elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     if event.ui_element == rule_input:
                         birth_rules, survive_rules = parse_rule(rule_input.get_text())
-
-            manager.process_events(event)
 
         manager.update(time_delta / 1000.0)
 
