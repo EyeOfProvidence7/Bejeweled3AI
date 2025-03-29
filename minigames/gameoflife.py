@@ -159,7 +159,7 @@ def main():
                     psy_button.set_text("Turn On" if not psychedelic_mode else "Turn Off")
 
             elif event.type == pygame.USEREVENT:
-                if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == pause_button:
                         paused = not paused
                         pause_button.set_text("Play" if paused else "Pause")
@@ -172,7 +172,7 @@ def main():
                     elif event.ui_element == psy_button:
                         psychedelic_mode = not psychedelic_mode
                         psy_button.set_text("Turn On" if not psychedelic_mode else "Turn Off")
-                elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_element == rule_input:
+                elif event.user_type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_element == rule_input:
                     birth_rules, survive_rules = parse_rule(rule_input.get_text())
 
         manager.update(time_delta / 1000.0)
