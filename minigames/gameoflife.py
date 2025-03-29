@@ -12,7 +12,7 @@ INITIAL_FPS = 10
 
 # Colors
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)
 
 RULE_STRING = "B3/S23"
 
@@ -42,7 +42,7 @@ def draw_grid(screen, grid):
         for x in range(GRID_WIDTH):
             if grid[y, x] == 1:
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
-                pygame.draw.rect(screen, WHITE, rect)
+                pygame.draw.rect(screen, YELLOW, rect)
 
 def main():
     pygame.init()
