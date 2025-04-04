@@ -6,10 +6,19 @@ import colorsys
 import math
 
 # Config
-CELL_SIZE = 10
-GRID_WIDTH = 160
-GRID_HEIGHT = 120
+#-----------------------------
+# Fixed Screen Resolution
+TOTAL_WIDTH = 1600
+TOTAL_HEIGHT = 1200
+
+# Start with initial grid width and calculate from that
+INITIAL_GRID_WIDTH = 160
+CELL_SIZE = TOTAL_WIDTH // INITIAL_GRID_WIDTH
+GRID_WIDTH = TOTAL_WIDTH // CELL_SIZE
+GRID_HEIGHT = TOTAL_HEIGHT // CELL_SIZE
 UI_WIDTH_PIXELS = 400
+
+
 INITIAL_FPS = 10
 
 # Colors
@@ -42,15 +51,29 @@ def update_grid(grid, birth_rules, survive_rules):
 
 
 def draw_standard_grid(screen, grid):
+    global CELL_SIZE, GRID_WIDTH, GRID_HEIGHT
+
+    if GRID_WIDTH > INITIAL_GRID_WIDTH:
+        padding = 0
+    else:
+        padding = 1
+
     screen.fill(BLACK, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if grid[y, x] == 1:
-                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
+                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - padding, CELL_SIZE - padding)
                 pygame.draw.rect(screen, YELLOW, rect)
 
 
 def draw_psychedelic_grid(screen, grid):
+    global CELL_SIZE, GRID_WIDTH, GRID_HEIGHT
+
+    if GRID_WIDTH > INITIAL_GRID_WIDTH:
+        padding = 0
+    else:
+        padding = 1
+
     t = pygame.time.get_ticks() / 1000.0
     bg_color = tuple(int(c * 255) for c in colorsys.hsv_to_rgb((t * 0.05) % 1.0, 0.2, 0.07))
     screen.fill(bg_color, pygame.Rect(0, 0, GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
@@ -65,7 +88,7 @@ def draw_psychedelic_grid(screen, grid):
                 warp = math.sin(x * 0.1 + y * 0.1 + t * 3) * 0.5
                 hue = (0.5 + 0.5 * math.sin(((x * dx + y * dy) * 0.02 + t * 0.5 + weirdness + warp))) % 1.0
                 color = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1, 1))
-                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1)
+                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - padding, CELL_SIZE - padding)
                 pygame.draw.rect(screen, color, rect)
 
 
@@ -92,6 +115,8 @@ def draw_legend(surface):
 
 
 def init_pygame_and_ui():
+    global GRID_WIDTH, GRID_HEIGHT, CELL_SIZE
+
     pygame.init()
     screen_size = (GRID_WIDTH * CELL_SIZE + UI_WIDTH_PIXELS, GRID_HEIGHT * CELL_SIZE)
     screen = pygame.display.set_mode(screen_size)
@@ -102,10 +127,15 @@ def init_pygame_and_ui():
 
 
 def create_ui_elements(manager):
+    global GRID_WIDTH, GRID_HEIGHT, CELL_SIZE
+
+    def rect(x, y, w, h): return pygame.Rect((x, y), (w, h))
+
     label_x = GRID_WIDTH * CELL_SIZE + 20
     element_x = label_x + 180
 
-    def rect(x, y, w, h): return pygame.Rect((x, y), (w, h))
+    pygame_gui.elements.UILabel(rect(label_x, 340, 160, 30), "Grid Width", manager)
+    grid_slider = pygame_gui.elements.UIHorizontalSlider(rect(element_x, 340, 160, 30), INITIAL_GRID_WIDTH, (10, 320), manager)
 
     pygame_gui.elements.UILabel(rect(label_x, 20, 160, 24), "FPS", manager)
     slider = pygame_gui.elements.UIHorizontalSlider(rect(element_x, 20, 160, 24), INITIAL_FPS, (1, 60), manager)
@@ -141,10 +171,13 @@ def create_ui_elements(manager):
         'psy_button': psy_button,
         'clear_button': clear_button,
         'brush_slider': brush_slider,
+        'grid_slider': grid_slider
     }
 
 
 def apply_brush(grid, cx, cy, value, radius):
+    global GRID_WIDTH, GRID_HEIGHT
+
     for y in range(cy - radius, cy + radius + 1):
         for x in range(cx - radius, cx + radius + 1):
             if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
@@ -154,6 +187,8 @@ def apply_brush(grid, cx, cy, value, radius):
 
 def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
                  mouse_down, drawing_value, birth_rules, survive_rules):
+    global GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, INITIAL_FPS, RULE_STRING
+
     running = True
 
     if event.type == pygame.QUIT:
@@ -212,6 +247,9 @@ def handle_input(event, ui, grid, paused, step_requested, psychedelic_mode,
 
 
 def draw_fill_preview(screen, ui, mouse_pos):
+    global GRID_WIDTH, GRID_HEIGHT, CELL_SIZE
+
+
     if mouse_pos[0] < GRID_WIDTH * CELL_SIZE and mouse_pos[1] < GRID_HEIGHT * CELL_SIZE:
         brush_size = int(ui['brush_slider'].get_current_value())
         gx, gy = mouse_pos[0] // CELL_SIZE, mouse_pos[1] // CELL_SIZE
@@ -225,11 +263,16 @@ def draw_fill_preview(screen, ui, mouse_pos):
 
 
 def main():
+    global GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, INITIAL_FPS, RULE_STRING
+
     screen, manager, clock = init_pygame_and_ui()
     ui = create_ui_elements(manager)
 
     grid = np.random.choice([0, 1], size=(GRID_HEIGHT, GRID_WIDTH), p=[0.8, 0.2])
     birth_rules, survive_rules = parse_rule(RULE_STRING)
+
+    grid_slider_value = int(ui['grid_slider'].get_current_value())
+    prev_grid_slider_value = grid_slider_value
 
     fps = INITIAL_FPS
     sim_interval = 1000 / fps
@@ -256,6 +299,25 @@ def main():
             )
 
         manager.update(time_delta / 1000.0)
+
+        grid_slider_value = int(ui['grid_slider'].get_current_value())
+        if grid_slider_value != prev_grid_slider_value:
+            # Recalculate dimensions
+            CELL_SIZE = TOTAL_WIDTH // grid_slider_value
+            GRID_WIDTH = TOTAL_WIDTH // CELL_SIZE
+            GRID_HEIGHT = TOTAL_HEIGHT // CELL_SIZE
+
+            # Create a new grid with updated size
+            new_grid = np.zeros((GRID_HEIGHT, GRID_WIDTH), dtype=np.uint8)
+
+            # Optionally copy existing grid data into new one
+            min_height = min(GRID_HEIGHT, grid.shape[0])
+            min_width = min(GRID_WIDTH, grid.shape[1])
+            new_grid[:min_height, :min_width] = grid[:min_height, :min_width]
+
+            grid = new_grid
+            prev_grid_slider_value = grid_slider_value
+
 
         if (not paused and time_since_last_step >= sim_interval) or (paused and step_requested):
             grid = update_grid(grid, birth_rules, survive_rules)
