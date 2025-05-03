@@ -7,11 +7,48 @@ import numpy as np
 import mss
 import pygetwindow as gw
 
+import torch
+import torch.nn as nn
+from torchvision import models, transforms, datasets
+from PIL import Image
+
+ds = datasets.ImageFolder(root="augmented_dataset", transform=...)
+idx_to_class = {v: k for k, v in ds.class_to_idx.items()}
+
+# 1a. Pick your device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# 1b. Re-create the exact same architecture
+weights = models.ResNet18_Weights.DEFAULT
+model = models.resnet18(weights=weights)
+for p in model.parameters():
+    p.requires_grad = False
+model.fc = nn.Linear(model.fc.in_features, 7)
+
+# 1c. Load your checkpoint
+checkpoint = torch.load("gem_classifier.pth", map_location=device)
+model.load_state_dict(checkpoint["model_state_dict"])
+model.to(device).eval()
+
+model.half()                    # convert weights to FP16
+model.to(device)
+
+# 1d. Define the same preprocessing you used for training
+inference_transform = transforms.Compose([
+    #assume already 24 by 24
+    transforms.ToTensor(),
+])
+
+# 1e. Your color names in the same order as your folders / class_to_idx
+CLASS_NAMES = ["blue", "green", "orange", "purple", "red", "white", "yellow"]
+
+
 def get_scale_factor() -> float:
     """
     Returns the Windows scale factor for high-DPI devices.
     """
     return ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
+
 
 def find_bejeweled_window() -> gw.Win32Window:
     """
@@ -24,6 +61,7 @@ def find_bejeweled_window() -> gw.Win32Window:
             return gw.getWindowsWithTitle(title)[0]
     return None
 
+
 def create_monitor_region(window: gw.Win32Window, scale_factor: float) -> dict:
     """
     Given a window and the scale factor, returns the bounding region
@@ -35,6 +73,7 @@ def create_monitor_region(window: gw.Win32Window, scale_factor: float) -> dict:
         "width": int(window.width * scale_factor),
         "height": int(window.height * scale_factor)
     }
+
 
 def create_grid_region(window_region: dict) -> dict:
     """
@@ -49,6 +88,7 @@ def create_grid_region(window_region: dict) -> dict:
         "width": 1026,
         "height": 1026
     }
+
 
 def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
     """
@@ -74,8 +114,28 @@ def create_grid_squares(grid_region: dict, grid_size: int = 8) -> list:
             })
     return squares
 
-def identify_gem_type() -> str:
-    pass
+
+def identify_gem_type(square_img) -> str:
+    """
+    square_img: NumPy BGR image of size ~124×124 (including any tiny border)
+    returns: the predicted class name, e.g. "red", "green", etc.
+    """
+    # A) BGR → RGB
+    rgb = cv2.cvtColor(square_img, cv2.COLOR_BGR2RGB)
+
+    # B) to PIL → tensor
+    pil = Image.fromarray(rgb)
+    inp = inference_transform(pil)       # [3×124×124], floats in [0,1]
+    inp = inp.unsqueeze(0).half().to(device)    # add batch dim → [1×3×124×124]
+
+    # C) forward
+    with torch.no_grad():
+        logits = model(inp)
+    idx = logits.argmax(dim=1).item()
+
+    # D) map to class name
+    return idx_to_class[idx]
+
 
 def extract_gem_grabcut(square_img):
     """
@@ -100,6 +160,7 @@ def extract_gem_grabcut(square_img):
     extracted = square_img * mask2[:, :, np.newaxis]
 
     return extracted
+
 
 def capture_and_process_frame(
     sct: mss.mss,
@@ -173,8 +234,8 @@ def capture_and_process_frame(
         #cv2.rectangle(img, top_left, bottom_right, (0, 255, 0), 1)
 
         # Identify gem type
-        #gem_type = identify_gem_type(square_img, reference_images)
-        color_labels[row][col] = "U"
+        gem_type = identify_gem_type(square_img)
+        color_labels[row][col] = gem_type[0].upper()
 
     # Draw labels on the image
     for square in grid_squares:
@@ -207,6 +268,7 @@ def capture_and_process_frame(
 
     # Write the labeled frame to the video file
     video_out.write(img)
+
 
 def main():
     """

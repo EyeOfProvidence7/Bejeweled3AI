@@ -54,45 +54,45 @@ def add_salt_pepper_noise(image, amount=0.02):
     return noisy_image
 
 # Define Paths
-input_root = "dataset"  # Folder containing {gem_color}_example/ directories
-output_root = "augmented_dataset"  # Output folder
+# input_root = "dataset"  # Folder containing {gem_color}_example/ directories
+# output_root = "augmented_dataset"  # Output folder
 
-# Augmentations Per Image
-num_augmentations = 1000  # Generate this many per gem
+# # Augmentations Per Image
+# num_augmentations = 1000  # Generate this many per gem
 
-# Process Each Example Folder
-for example_folder in os.listdir(input_root):
-    if not example_folder.endswith("_example"):
-        continue
+# # Process Each Example Folder
+# for example_folder in os.listdir(input_root):
+#     if not example_folder.endswith("_example"):
+#         continue
     
-    gem_color = example_folder.replace("_example", "")
-    input_folder = os.path.join(input_root, example_folder)
-    output_folder = os.path.join(output_root, gem_color)
+#     gem_color = example_folder.replace("_example", "")
+#     input_folder = os.path.join(input_root, example_folder)
+#     output_folder = os.path.join(output_root, gem_color)
 
-    # Ensure Output Directory Exists
-    os.makedirs(output_folder, exist_ok=True)
+#     # Ensure Output Directory Exists
+#     os.makedirs(output_folder, exist_ok=True)
 
-    # Find the single gem image inside
-    gem_files = [f for f in os.listdir(input_folder) if f.endswith(".png")]
-    if len(gem_files) == 0:
-        print(f"Skipping {example_folder}, no image found.")
-        continue
+#     # Find the single gem image inside
+#     gem_files = [f for f in os.listdir(input_folder) if f.endswith(".png")]
+#     if len(gem_files) == 0:
+#         print(f"Skipping {example_folder}, no image found.")
+#         continue
     
-    gem_image_path = os.path.join(input_folder, gem_files[0])
-    original_img = cv2.imread(gem_image_path)
+#     gem_image_path = os.path.join(input_folder, gem_files[0])
+#     original_img = cv2.imread(gem_image_path)
 
-    # Generate Augmented Images
-    for i in range(num_augmentations):
-        img = original_img.copy()
+#     # Generate Augmented Images
+#     for i in range(num_augmentations):
+#         img = original_img.copy()
         
-        # Apply Random Transformations
-        if np.random.rand() > 0.2: img = random_brightness_contrast(img)
-        if np.random.rand() > 0.3: img = add_salt_pepper_noise(img)
+#         # Apply Random Transformations
+#         if np.random.rand() > 0.2: img = random_brightness_contrast(img)
+#         if np.random.rand() > 0.3: img = add_salt_pepper_noise(img)
         
-        # Save Augmented Image
-        output_filename = os.path.join(output_folder, f"{gem_color}_{i}.png")
-        cv2.imwrite(output_filename, img)
+#         # Save Augmented Image
+#         output_filename = os.path.join(output_folder, f"{gem_color}_{i}.png")
+#         cv2.imwrite(output_filename, img)
 
-    print(f"Generated {num_augmentations} images for {gem_color}")
+#     print(f"Generated {num_augmentations} images for {gem_color}")
 
-print("Data augmentation complete!")
+# print("Data augmentation complete!")
